@@ -7,20 +7,21 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RentalKendaraan.Models;
 
-namespace RentalKendaraan.Controllers
+namespace RentalKendaraan.Views.Customers
 {
-    public class CustomersController : Controller
+    public class JenisKendaraansController : Controller
     {
         private readonly RentKendaraanContext _context;
 
-        public CustomersController(RentKendaraanContext context)
+        public JenisKendaraansController(RentKendaraanContext context)
         {
             _context = context;
         }
 
-        // GET: Customers
+        // GET: JenisKendaraans
         public async Task<IActionResult> Index(string cstmr, string searchString, string currentFilter, int? pageNumber, string sortOrder)
         {
+
             //membuat pagedlist
             ViewData["CurrentSort"] = sortOrder;
 
@@ -32,54 +33,51 @@ namespace RentalKendaraan.Controllers
             {
                 searchString = currentFilter;
             }
-
-            ViewData["CurrentFilter"] = searchString;
-
+            //buat list menyimpan ketersediaan
             var cstmrList = new List<string>();
-
-            var cstmrQuery = from d in _context.Customer orderby d.Nik select d.Nik;
+            //query mengambil data
+            var cstmrQuery = from d in _context.JenisKendaraan orderby d.NamaJenisKendaraan select d.NamaJenisKendaraan;
 
             cstmrList.AddRange(cstmrQuery.Distinct());
 
+            //untuk nampilkan view
             ViewBag.cstmr = new SelectList(cstmrList);
 
-            var menu = from m in _context.Customer.Include(k => k.IdGenderNavigation) select m;
+            //panggil db context
+            var menu = from m in _context.JenisKendaraan select m;
 
+            //untuk memilih dropdownlist ketersediaan
             if (!string.IsNullOrEmpty(cstmr))
             {
-                menu = menu.Where(x => x.NamaCustomer == cstmr);
+                menu = menu.Where(x => x.NamaJenisKendaraan == cstmr);
             }
 
+            //untuk search data
             if (!string.IsNullOrEmpty(searchString))
             {
-                menu = menu.Where(s => s.NoHp.Contains(searchString) || s.NamaCustomer.Contains(searchString) || s.Alamat.Contains(searchString));
+                menu = menu.Where(s => s.NamaJenisKendaraan.Contains(searchString));
             }
-
             //untuk sorting
             ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-            ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
 
             switch (sortOrder)
             {
                 case "name_desc":
-                    menu = menu.OrderByDescending(s => s.NamaCustomer);
-                    break;
-                case "Date":
-                    menu = menu.OrderBy(s => s.Nik);
-                    break;
-                case "date_desc":
-                    menu = menu.OrderByDescending(s => s.Nik);
+                    menu = menu.OrderByDescending(s => s.NamaJenisKendaraan);
                     break;
                 default: //name ascending
-                    menu = menu.OrderBy(s => s.IdGenderNavigation.NamaGender);
+                    menu = menu.OrderBy(s => s.NamaJenisKendaraan);
                     break;
             }
+
+
             //definisi jumlah data pada halaman
             int pageSize = 5;
 
-            return View(await PaginatedList<Customer>.CreateAsync(menu.AsNoTracking(), pageNumber ?? 1, pageSize));
+            return View(await PaginatedList<JenisKendaraan>.CreateAsync(menu.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
-        // GET: Customers/Details/5
+
+        // GET: JenisKendaraans/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -87,42 +85,39 @@ namespace RentalKendaraan.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customer
-                .Include(c => c.IdGenderNavigation)
-                .FirstOrDefaultAsync(m => m.IdCustomer == id);
-            if (customer == null)
+            var jenisKendaraan = await _context.JenisKendaraan
+                .FirstOrDefaultAsync(m => m.IdJenisKendaraan == id);
+            if (jenisKendaraan == null)
             {
                 return NotFound();
             }
 
-            return View(customer);
+            return View(jenisKendaraan);
         }
 
-        // GET: Customers/Create
+        // GET: JenisKendaraans/Create
         public IActionResult Create()
         {
-            ViewData["IdGender"] = new SelectList(_context.Gender, "IdGender", "IdGender");
             return View();
         }
 
-        // POST: Customers/Create
+        // POST: JenisKendaraans/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdCustomer,NamaCustomer,Nik,Alamat,NoHp,IdGender")] Customer customer)
+        public async Task<IActionResult> Create([Bind("IdJenisKendaraan,NamaJenisKendaraan")] JenisKendaraan jenisKendaraan)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(customer);
+                _context.Add(jenisKendaraan);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdGender"] = new SelectList(_context.Gender, "IdGender", "IdGender", customer.IdGender);
-            return View(customer);
+            return View(jenisKendaraan);
         }
 
-        // GET: Customers/Edit/5
+        // GET: JenisKendaraans/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -130,23 +125,22 @@ namespace RentalKendaraan.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customer.FindAsync(id);
-            if (customer == null)
+            var jenisKendaraan = await _context.JenisKendaraan.FindAsync(id);
+            if (jenisKendaraan == null)
             {
                 return NotFound();
             }
-            ViewData["IdGender"] = new SelectList(_context.Gender, "IdGender", "IdGender", customer.IdGender);
-            return View(customer);
+            return View(jenisKendaraan);
         }
 
-        // POST: Customers/Edit/5
+        // POST: JenisKendaraans/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdCustomer,NamaCustomer,Nik,Alamat,NoHp,IdGender")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("IdJenisKendaraan,NamaJenisKendaraan")] JenisKendaraan jenisKendaraan)
         {
-            if (id != customer.IdCustomer)
+            if (id != jenisKendaraan.IdJenisKendaraan)
             {
                 return NotFound();
             }
@@ -155,12 +149,12 @@ namespace RentalKendaraan.Controllers
             {
                 try
                 {
-                    _context.Update(customer);
+                    _context.Update(jenisKendaraan);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CustomerExists(customer.IdCustomer))
+                    if (!JenisKendaraanExists(jenisKendaraan.IdJenisKendaraan))
                     {
                         return NotFound();
                     }
@@ -171,11 +165,10 @@ namespace RentalKendaraan.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdGender"] = new SelectList(_context.Gender, "IdGender", "IdGender", customer.IdGender);
-            return View(customer);
+            return View(jenisKendaraan);
         }
 
-        // GET: Customers/Delete/5
+        // GET: JenisKendaraans/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -183,31 +176,30 @@ namespace RentalKendaraan.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customer
-                .Include(c => c.IdGenderNavigation)
-                .FirstOrDefaultAsync(m => m.IdCustomer == id);
-            if (customer == null)
+            var jenisKendaraan = await _context.JenisKendaraan
+                .FirstOrDefaultAsync(m => m.IdJenisKendaraan == id);
+            if (jenisKendaraan == null)
             {
                 return NotFound();
             }
 
-            return View(customer);
+            return View(jenisKendaraan);
         }
 
-        // POST: Customers/Delete/5
+        // POST: JenisKendaraans/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var customer = await _context.Customer.FindAsync(id);
-            _context.Customer.Remove(customer);
+            var jenisKendaraan = await _context.JenisKendaraan.FindAsync(id);
+            _context.JenisKendaraan.Remove(jenisKendaraan);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CustomerExists(int id)
+        private bool JenisKendaraanExists(int id)
         {
-            return _context.Customer.Any(e => e.IdCustomer == id);
+            return _context.JenisKendaraan.Any(e => e.IdJenisKendaraan == id);
         }
     }
 }

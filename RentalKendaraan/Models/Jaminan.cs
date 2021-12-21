@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace RentalKendaraan.Models
 {
@@ -9,8 +10,9 @@ namespace RentalKendaraan.Models
         {
             Peminjaman = new HashSet<Peminjaman>();
         }
-
+        [Required(ErrorMessage = "ID Jaminan tidak boleh kosong")]
         public int IdJaminan { get; set; }
+        [Required(ErrorMessage = "Nama Jaminan tidak boleh kosong")]
         public string NamaJaminan { get; set; }
 
         public virtual ICollection<Peminjaman> Peminjaman { get; set; }
